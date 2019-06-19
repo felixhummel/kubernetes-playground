@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-configmaps-and-secrets
+  labels:
+    app: test-configmaps-and-secrets
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-configmaps-and-secrets
+  template:
+    metadata:
+      labels:
+        app: test-configmaps-and-secrets
+    spec:
+      containers:
+      - name: app
+        image: python:3.7-stretch
+        command: ["sleep",  "infinity"]
+        envFrom:
+        - configMapRef:
+            name: test-configmap-v2
+        - secretRef:
+            name: test-secrets-v2
+---
+# configmap changes don't result in Deployment changes.
+#
+# Hack: hash the config
+# https://blog.questionable.services/article/kubernetes-deployments-configmap-change/
+#
+# Better: immutable ConfigMaps (maybe with kustomize)
+# https://stackoverflow.com/a/40624029/241240
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-configmap-v2
+data:
+  TESTAPP_FOO: foo
+  TESTAPP_BAR: bar
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: test-secrets-v2
+type: Opaque
+data:
+  # echo secret | base64
+  TESTAPP_PASSWORD: c2VjcmV0Cg==
